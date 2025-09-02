@@ -2,6 +2,15 @@ name: Build and push Docker image
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which version part to bump?"
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
   release:
     types: [published]
 
@@ -24,11 +33,53 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          else
+            # Get latest tag or default
+            latest=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+            echo "Latest tag: $latest"
+
+            # Strip leading v if present
+            latest="${latest#v}"
+
+            major=$(echo "$latest" | cut -d. -f1)
+            minor=$(echo "$latest" | cut -d. -f2)
+            patch=$(echo "$latest" | cut -d. -f3)
+
+            case "${{ inputs.bump }}" in
+              major)
+                major=$((major+1))
+                minor=0
+                patch=0
+                ;;
+              minor)
+                minor=$((minor+1))
+                patch=0
+                ;;
+              patch)
+                patch=$((patch+1))
+                ;;
+            esac
+
+            new="$major.$minor.$patch"
+            echo "version=$new" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v3
         with:
           images: robospecta/f1-incident-discord-bot
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+
+            # Only push latest if release is from main
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.release.target_commitish == 'main' }}
 
       - name: Build and push Docker image
         id: push
