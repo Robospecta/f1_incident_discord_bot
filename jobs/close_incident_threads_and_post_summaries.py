@@ -9,7 +9,7 @@ $outcome (**$vote_count votes**) ($vote_emoji)
 """)
 
 FULL_SUMMARY_TEMPLATE = string.Template("""\
-📊 **Weekly Incident Poll Summary for $guild_name**
+📊 **Weekly Incident Poll Summary for $channel_name**
 
 $thread_summaries
 """)
@@ -80,7 +80,7 @@ async def close_incident_threads_and_post_summaries(bot: commands.Bot):
                 thread_summaries.append("No active incident threads found this week.\n")
 
             full_summary = FULL_SUMMARY_TEMPLATE.substitute(
-                guild_name=guild.name,
+                channel_name=review_channel.mention,
                 thread_summaries="".join(thread_summaries),
             )
 

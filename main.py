@@ -35,7 +35,7 @@ async def on_ready():
         scheduler.start()
 
     # Register cron jobs    
-    trigger = CronTrigger(second="*/10")
+    trigger = CronTrigger(second="*/59")
     scheduler.add_job(close_incident_threads_and_post_summaries, trigger, args=[bot])
     print("Scheduled thread closure task.")
 
