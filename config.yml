@@ -1,0 +1,14 @@
+bot:
+  timezone: 'Australia/Melbourne'
+
+  commands:
+    - name: create_poll
+      group: incident
+      description: Create an incident poll between up to 5 drivers.
+      func_name: create_incident_poll
+
+  jobs:
+    - name: finalise_polls
+      description: Close threads and post summary of incident polls.
+      interval: 0 21 * * 1
+      func_name: finalise_polls

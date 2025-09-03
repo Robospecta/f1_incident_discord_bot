@@ -14,7 +14,7 @@ FULL_SUMMARY_TEMPLATE = string.Template("""\
 $thread_summaries
 """)
 
-async def close_incident_threads_and_post_summaries(bot: commands.Bot):
+async def finalise_polls(bot: commands.Bot):
     print("Running thread closure task...")
     for guild in bot.guilds:
         review_channel = discord.utils.get(guild.text_channels, name="test-chat")

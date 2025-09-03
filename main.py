@@ -4,10 +4,13 @@ from discord.ext import commands
 from discord import app_commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from commands import create_incident_poll
-from jobs import close_incident_threads_and_post_summaries
+from datetime import datetime
+import commands as command_functions
+import importlib
+import jobs as job_functions
+from box import Box
 import pytz
-
+import yaml
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -15,29 +18,54 @@ intents = discord.Intents.default()
 intents.members = True 
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-incident_group = app_commands.Group(name="incident", description="Commands related to an incident")
 
-scheduler = AsyncIOScheduler(timezone=pytz.timezone('Australia/Melbourne'))
-
-@bot.event
-async def on_ready():
-    print(f"Bot connected as {bot.user}")
+async def register_commands(config, bot):
     try:
         # Register commands
-        create_incident_poll_command = incident_group.command(name="create_poll", description="Create an incident poll between up to 5 drivers.")(create_incident_poll)
-        bot.tree.add_command(incident_group)
+        groups = {
+            group_name: app_commands.Group(name=group_name, description=group_name.upper())
+            for group_name in [command.group for command in config.bot.commands]
+        }
+
+        for command_config in config.bot.commands:
+            func = getattr(command_functions, command_config.func_name)
+            command_instance = groups.get(command_config.group).command(name=command_config.name, description=command_config.description)(func)
+            print(f"Added {command_config.name} command ({command_config.description}).")
+
+        for group in groups.values():
+            bot.tree.add_command(group)
+
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} slash commands.")
     except Exception as e:
         print(f"Error syncing commands: {e}")
 
+def register_jobs(config):
+    timezone = pytz.timezone(config.bot.timezone)
+    scheduler = AsyncIOScheduler(timezone=timezone)
+
+    # Register cron jobs
+    for job_config in config.bot.jobs:
+        trigger = CronTrigger.from_crontab(job_config.interval)
+        func = getattr(job_functions, job_config.func_name)
+        job_instance = scheduler.add_job(func, trigger, args=[bot])
+        print(f"Scheduled {job_config.name} job ({job_config.description}). Next run time at {job_instance.trigger.get_next_fire_time(None, datetime.now(timezone))}.")
+        
     if not scheduler.running:
         scheduler.start()
 
-    # Register cron jobs    
-    trigger = CronTrigger(second="*/59")
-    scheduler.add_job(close_incident_threads_and_post_summaries, trigger, args=[bot])
-    print("Scheduled thread closure task.")
+@bot.event
+async def on_ready():
+    print(f"Bot connected as {bot.user}")
+
+    print(f"Reading config")
+    # Try read config
+    with open("config.yml", "r") as f:
+        config = Box(yaml.safe_load(f))
+
+    await register_commands(config, bot)
+    register_jobs(config)
+    print("Ready.")
 
 if __name__ == "__main__":
     bot.run(TOKEN)

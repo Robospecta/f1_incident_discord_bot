@@ -2,3 +2,5 @@ discord.py
 python-dotenv
 pytz
 apscheduler
+pyyaml
+python-box

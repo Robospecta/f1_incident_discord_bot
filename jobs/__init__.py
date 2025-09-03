@@ -1,1 +1,1 @@
-from .close_incident_threads_and_post_summaries import close_incident_threads_and_post_summaries
+from .finalise_polls import finalise_polls
