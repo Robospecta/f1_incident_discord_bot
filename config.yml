@@ -1,5 +1,6 @@
 bot:
   timezone: 'Australia/Melbourne'
+  channel: fia-review
 
   commands:
     - name: create_poll

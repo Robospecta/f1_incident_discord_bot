@@ -14,12 +14,12 @@ FULL_SUMMARY_TEMPLATE = string.Template("""\
 $thread_summaries
 """)
 
-async def finalise_polls(bot: commands.Bot):
+async def finalise_polls(bot: commands.Bot, config):
     print("Running thread closure task...")
     for guild in bot.guilds:
-        review_channel = discord.utils.get(guild.text_channels, name="test-chat")
+        review_channel = discord.utils.get(guild.text_channels, name=config.bot.channel)
         if not review_channel:
-            print(f"No #fia-review channel found in guild {guild.name}")
+            print(f"No #{config.bot.channel} found in guild {guild.name}")
             continue
 
         thread_summaries = []
@@ -87,4 +87,4 @@ async def finalise_polls(bot: commands.Bot):
             await review_channel.send(full_summary)
 
         except Exception as e:
-            print(f"Error processing #fia-review in guild {guild.name}: {e}")
+            print(f"Error processing #{config.bot.channel} in guild {guild.name}: {e}")

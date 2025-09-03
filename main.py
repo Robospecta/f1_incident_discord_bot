@@ -48,7 +48,7 @@ def register_jobs(config):
     for job_config in config.bot.jobs:
         trigger = CronTrigger.from_crontab(job_config.interval)
         func = getattr(job_functions, job_config.func_name)
-        job_instance = scheduler.add_job(func, trigger, args=[bot])
+        job_instance = scheduler.add_job(func, trigger, args=[bot, config])
         print(f"Scheduled {job_config.name} job ({job_config.description}). Next run time at {job_instance.trigger.get_next_fire_time(None, datetime.now(timezone))}.")
         
     if not scheduler.running:
