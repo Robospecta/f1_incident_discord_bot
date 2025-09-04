@@ -6,7 +6,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime
 import commands as command_functions
-import importlib
 import jobs as job_functions
 from box import Box
 import pytz
@@ -29,7 +28,7 @@ async def register_commands(config, bot):
 
         for command_config in config.bot.commands:
             func = getattr(command_functions, command_config.func_name)
-            command_instance = groups.get(command_config.group).command(name=command_config.name, description=command_config.description)(func)
+            groups.get(command_config.group).command(name=command_config.name, description=command_config.description)(func)
             print(f"Added {command_config.name} command ({command_config.description}).")
 
         for group in groups.values():
@@ -63,6 +62,7 @@ async def on_ready():
     with open("config.yml", "r") as f:
         config = Box(yaml.safe_load(f))
 
+    bot.config = config
     await register_commands(config, bot)
     register_jobs(config)
     print("Ready.")

@@ -8,6 +8,11 @@ bot:
       description: Create an incident poll between up to 5 drivers.
       func_name: create_incident_poll
 
+    - name: run_job
+      group: jobs
+      description: Run a generic job from the available list of jobs.
+      func_name: run_job
+
   jobs:
     - name: finalise_polls
       description: Close threads and post summary of incident polls.

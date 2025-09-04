@@ -15,7 +15,7 @@ $thread_summaries
 """)
 
 async def finalise_polls(bot: commands.Bot, config):
-    print("Running thread closure task...")
+    print("Finalising incident polls")
     for guild in bot.guilds:
         review_channel = discord.utils.get(guild.text_channels, name=config.bot.channel)
         if not review_channel:

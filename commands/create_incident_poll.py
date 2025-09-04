@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-
+from box import Box
 AUTO_ARCHIVE_DURATION = 10080  # 7 days
 
 @app_commands.describe(
@@ -54,5 +54,5 @@ async def create_incident_poll(
     )
 
     await interaction.followup.send(
-        f"Incident poll created in {thread.mention}!", ephemeral=False
+        f"Incident poll created in {thread.mention}!", ephemeral=True
     )
