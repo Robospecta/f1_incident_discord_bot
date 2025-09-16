@@ -1,3 +1,4 @@
+import logging
 import os
 import discord
 from discord.ext import commands
@@ -11,6 +12,7 @@ from box import Box
 import pytz
 import yaml
 
+logger = logging.getLogger(__name__)
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()
@@ -29,15 +31,15 @@ async def register_commands(config, bot):
         for command_config in config.bot.commands:
             func = getattr(command_functions, command_config.func_name)
             groups.get(command_config.group).command(name=command_config.name, description=command_config.description)(func)
-            print(f"Added {command_config.name} command ({command_config.description}).")
+            logger.info("Added %s command (%s)", command_config.name, command_config.description)
 
         for group in groups.values():
             bot.tree.add_command(group)
 
         synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} slash commands.")
+        logger.info("Synced %s slash commands", len(synced))
     except Exception as e:
-        print(f"Error syncing commands: {e}")
+        logger.exception("Error syncing commands")
 
 def register_jobs(config):
     timezone = pytz.timezone(config.bot.timezone)
@@ -48,16 +50,16 @@ def register_jobs(config):
         trigger = CronTrigger.from_crontab(job_config.interval)
         func = getattr(job_functions, job_config.func_name)
         job_instance = scheduler.add_job(func, trigger, args=[bot, config])
-        print(f"Scheduled {job_config.name} job ({job_config.description}). Next run time at {job_instance.trigger.get_next_fire_time(None, datetime.now(timezone))}.")
+        logger.info("Scheduled %s job (%s). Next run time at %s", job_config.name, job_config.description, job_instance.trigger.get_next_fire_time(None, datetime.now(timezone)))
         
     if not scheduler.running:
         scheduler.start()
 
 @bot.event
 async def on_ready():
-    print(f"Bot connected as {bot.user}")
+    logger.info("Bot connected as %s", bot.user)
 
-    print(f"Reading config")
+    logger.info("Bot reading config")
     # Try read config
     with open("config.yml", "r") as f:
         config = Box(yaml.safe_load(f))
@@ -65,7 +67,7 @@ async def on_ready():
     bot.config = config
     await register_commands(config, bot)
     register_jobs(config)
-    print("Ready.")
+    logger.info("Bot ready")
 
 if __name__ == "__main__":
     bot.run(TOKEN)

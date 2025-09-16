@@ -62,4 +62,4 @@ async def create_incident_poll(
             f"Incident poll created in {thread.mention}!", ephemeral=True
         )
     except Exception as e:
-        logger.exception("Error running %s command in channel %s in guild %s", __name__, config.bot.channel, guild.name)
+        logger.exception("Error running %s command", __name__)

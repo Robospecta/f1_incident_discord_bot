@@ -1,5 +1,6 @@
 bot:
   timezone: 'Australia/Melbourne'
+  guild: SAINT CHADS
   channel: fia-review
 
   commands:
