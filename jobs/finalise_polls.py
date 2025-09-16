@@ -1,6 +1,9 @@
+import logging
 import string
 import discord
 from discord.ext import commands
+
+logger = logging.getLogger(__name__)
 
 THREAD_SUMMARY_TEMPLATE = string.Template("""\
 **Thread:** $thread_mention
@@ -15,12 +18,13 @@ $thread_summaries
 """)
 
 async def finalise_polls(bot: commands.Bot, config):
-    print("Finalising incident polls")
     for guild in bot.guilds:
         review_channel = discord.utils.get(guild.text_channels, name=config.bot.channel)
         if not review_channel:
             print(f"No #{config.bot.channel} found in guild {guild.name}")
             continue
+
+        logger.info("Finalising polls in channel %s in guild %s", review_channel.name, guild.name)
 
         thread_summaries = []
         try:
@@ -29,8 +33,9 @@ async def finalise_polls(bot: commands.Bot, config):
                 if thread.archived or thread.owner_id != bot.user.id:
                     continue
 
-                messages = [msg async for msg in thread.history(limit=10)]
-                poll_msg = messages[-1] if messages else None
+                logger.info("Finalising poll for thread %s in channel %s in guild %s", thread.name, review_channel.name, guild.name)
+                messages = [msg async for msg in thread.history(limit=1, oldest_first=True)]
+                poll_msg = messages[0] if messages else None
 
                 if poll_msg and poll_msg.reactions:
                     emoji_to_label = {}
@@ -59,24 +64,19 @@ async def finalise_polls(bot: commands.Bot, config):
 
                     thread_summary = THREAD_SUMMARY_TEMPLATE.substitute(
                         thread_mention=thread.mention,
-                        thread_name=thread.name,
                         outcome=outcome,
                         vote_count=max_votes,
                         vote_emoji=max_vote_emoji
                     )
                 else:
-                    thread_summary = THREAD_SUMMARY_TEMPLATE.substitute(
-                        thread_mention=thread.mention,
-                        thread_name=thread.name,
-                        top_label="No poll or votes found",
-                        max_votes=0,
-                    )
+                    logger.error("Unable to find poll or votes for thread %s in channel %s in guild %s", thread.name, review_channel.name, guild.name)
 
                 thread_summaries.append(thread_summary)
 
                 await thread.edit(archived=True, locked=True)
 
             if not thread_summaries:
+                logger.info("No active incident threads found this week in channel %s in guild %s", review_channel.name, guild.name)
                 thread_summaries.append("No active incident threads found this week.\n")
 
             full_summary = FULL_SUMMARY_TEMPLATE.substitute(
@@ -87,4 +87,4 @@ async def finalise_polls(bot: commands.Bot, config):
             await review_channel.send(full_summary)
 
         except Exception as e:
-            print(f"Error processing #{config.bot.channel} in guild {guild.name}: {e}")
+            logger.exception("Error running %s job in channel %s in guild %s", __name__, config.bot.channel, guild.name)
