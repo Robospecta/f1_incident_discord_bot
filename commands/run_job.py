@@ -14,7 +14,7 @@ async def run_job(
         interaction: discord.Interaction,
         job_name: str = None,
 ):
-    await interaction.response.defer()
+    await interaction.response.defer(ephemeral=True, thinking=True)
     job = getattr(jobs, job_name)
 
     await job(interaction.client, interaction.client.config)

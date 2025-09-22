@@ -1,7 +1,10 @@
 import discord
+import logging
 from discord import app_commands
 from box import Box
 AUTO_ARCHIVE_DURATION = 10080  # 7 days
+
+logger = logging.getLogger(__name__)
 
 @app_commands.describe(
     driver1="First driver to blame",
@@ -18,41 +21,57 @@ async def create_incident_poll(
     driver4: discord.User = None,
     driver5: discord.User = None,
 ):
-    await interaction.response.defer()
+    try:
+        # ❌ Stop if inside a thread
+        if isinstance(interaction.channel, discord.Thread):
+            # Get the channel object
+            target_channel = discord.utils.get(interaction.guild.channels, name=interaction.client.config.bot.channel)
 
-    users = [u for u in [driver1, driver2, driver3, driver4, driver5] if u is not None]
+            await interaction.response.send_message(
+                f"You cannot create an incident poll from a thread. "
+                f"Please use {target_channel.mention} in {interaction.guild.name}.",
+                ephemeral=True
+            )
+            return
+        
+        await interaction.response.defer(ephemeral=True, thinking=True)
 
-    thread = await interaction.channel.create_thread(
-        name=f"🚨 Incident Poll: {', '.join(u.display_name for u in users)}",
-        type=discord.ChannelType.public_thread,
-        auto_archive_duration=AUTO_ARCHIVE_DURATION
-    )
+        users = [u for u in [driver1, driver2, driver3, driver4, driver5] if u is not None]
+        logger.info("Creating incident poll for users %s", [x.name for x in users])
 
-    emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '🏁']  # add 🏁 emoji for racing incident
-    poll_text = "🕵️ **Who is responsible for the incident?** React to vote:\n\n"
+        thread = await interaction.channel.create_thread(
+            name=f"🚨 Incident Poll: {', '.join(u.display_name for u in users)}",
+            type=discord.ChannelType.public_thread,
+            auto_archive_duration=AUTO_ARCHIVE_DURATION
+        )
 
-    # List users with numbered emojis
-    for i, user in enumerate(users):
-        poll_text += f"{emojis[i]} {user.mention}\n"
+        emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '🏁']  # add 🏁 emoji for racing incident
+        poll_text = "🕵️ **Who is responsible for the incident?** React to vote:\n\n"
 
-    # Add final option for racing incident
-    poll_text += f"{emojis[-1]} Racing Incident\n"
+        # List users with numbered emojis
+        for i, user in enumerate(users):
+            poll_text += f"{emojis[i]} {user.mention}\n"
 
-    poll_message = await thread.send(poll_text)
+        # Add final option for racing incident
+        poll_text += f"{emojis[-1]} Racing Incident\n"
 
-    # Add reactions for all drivers
-    for i in range(len(users)):
-        await poll_message.add_reaction(emojis[i])
+        poll_message = await thread.send(poll_text)
 
-    # Add final reaction for racing incident
-    await poll_message.add_reaction(emojis[-1])
+        # Add reactions for all drivers
+        for i in range(len(users)):
+            await poll_message.add_reaction(emojis[i])
 
-    # 🔁 New follow-up message requesting video evidence
-    driver_mentions = " ".join(user.mention for user in users)
-    await thread.send(
-        f"🎥 {driver_mentions} and spectators: Please reply to this thread with any available **video evidence** of the incident."
-    )
+        # Add final reaction for racing incident
+        await poll_message.add_reaction(emojis[-1])
 
-    await interaction.followup.send(
-        f"Incident poll created in {thread.mention}!", ephemeral=True
-    )
+        # 🔁 New follow-up message requesting video evidence
+        driver_mentions = " ".join(user.mention for user in users)
+        await thread.send(
+            f"🎥 {driver_mentions} and spectators: Please reply to this thread with any available **video evidence** of the incident."
+        )
+
+        await interaction.followup.send(
+            f"Incident poll created in {thread.mention}!", ephemeral=True
+        )
+    except Exception as e:
+        logger.exception("Error running %s command", __name__)
