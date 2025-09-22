@@ -53,7 +53,7 @@ def register_jobs(config):
 
     # Register cron jobs
     for job_config in config.bot.jobs:
-        trigger = CronTrigger.from_crontab(job_config.interval)
+        trigger = CronTrigger.from_crontab(job_config.interval, timezone=timezone)
         func = getattr(job_functions, job_config.func_name)
         job_instance = scheduler.add_job(func, trigger, args=[bot, config])
         logger.info("Scheduled %s job (%s). Next run time at %s", job_config.name, job_config.description, job_instance.trigger.get_next_fire_time(None, datetime.now(timezone)))

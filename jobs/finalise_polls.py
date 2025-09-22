@@ -95,7 +95,7 @@ async def finalise_polls(bot: commands.Bot, config):
 
             thread_summaries.append(thread_summary)
 
-            #await thread.edit(archived=True, locked=True)
+            await thread.edit(archived=True, locked=True)
 
         if not thread_summaries:
             logger.info(
@@ -111,7 +111,7 @@ async def finalise_polls(bot: commands.Bot, config):
         )
 
         logger.info(full_summary)
-        #await review_channel.send(full_summary)
+        await review_channel.send(full_summary)
 
     except Exception as e:
         logger.exception(

@@ -17,5 +17,5 @@ bot:
   jobs:
     - name: finalise_polls
       description: Close threads and post summary of incident polls.
-      interval: 0 21 * * 1
+      interval: 0 21 * * 0
       func_name: finalise_polls
