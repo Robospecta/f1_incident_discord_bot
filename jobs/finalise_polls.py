@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 THREAD_SUMMARY_TEMPLATE = string.Template("""\
 **Thread:** $thread_mention
-$outcome (**$vote_count votes**) ($vote_emoji)
+$outcome (**$vote_count user votes**) ($vote_emoji)
 
 """)
 
