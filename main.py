@@ -3,6 +3,7 @@ import os
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord.utils import setup_logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime
@@ -12,7 +13,12 @@ from box import Box
 import pytz
 import yaml
 
-logger = logging.getLogger(__name__)
+# First, setup logging
+setup_logging(level=logging.INFO)  # you can also use DEBUG, WARNING, etc.
+
+# Now get a logger instance
+logger = logging.getLogger(__name__)  # typically use __name__ for module/class
+
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()

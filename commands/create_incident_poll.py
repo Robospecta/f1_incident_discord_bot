@@ -22,10 +22,22 @@ async def create_incident_poll(
     driver5: discord.User = None,
 ):
     try:
+        # ❌ Stop if inside a thread
+        if isinstance(interaction.channel, discord.Thread):
+            # Get the channel object
+            target_channel = discord.utils.get(interaction.guild.channels, name=interaction.client.config.bot.channel)
+
+            await interaction.response.send_message(
+                f"You cannot create an incident poll from a thread. "
+                f"Please use {target_channel.mention} in {interaction.guild.name}.",
+                ephemeral=True
+            )
+            return
+        
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         users = [u for u in [driver1, driver2, driver3, driver4, driver5] if u is not None]
-        logger.info("Creating incident poll for users %s", users)
+        logger.info("Creating incident poll for users %s", [x.name for x in users])
 
         thread = await interaction.channel.create_thread(
             name=f"🚨 Incident Poll: {', '.join(u.display_name for u in users)}",
